@@ -1,0 +1,22 @@
+{
+  "name": "nabdulla/blog_site",
+  "description": "a blog site as part of my internship at weDevs",
+  "type": "project",
+  "require": {
+    "monolog/monolog": "^2.2",
+    "ext-mysqli": "*",
+    "ext-json": "*"
+  },
+  "license": "non",
+  "authors": [
+    {
+      "name": "Md. Abdulla Al Mamun",
+      "email": "nayonabdulla@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Blog\\": "site/src"
+    }
+  }
+}
