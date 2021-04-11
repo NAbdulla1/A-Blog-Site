@@ -314,6 +314,17 @@ endd:
                             </ul>
                         </nav>
                     </div>
+                    <div class="dropdown d-flex justify-content-center">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Choose Posts Per Page
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <?php for ($items = 1; $items <= 5; $items++)
+                                echo "<a class='dropdown-item' href='category.php?cat_id=$catId&limit=$items'>$items Per Page</a>";
+                            ?>
+                        </div>
+                    </div>
                 <?php } ?>
             </div>
         </div><!--articles area-->
