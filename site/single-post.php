@@ -116,69 +116,11 @@ if (isset($_POST['comment-box'])) {
 </div>
 
 <div class="title-and-menu-area">
-    <div class="position-relative" style="top: 0;">
-        <div id="myCarousel" class="carousel slide" data-ride="carousel">
-            <div class="carousel-inner">
-                <?php $blgImgs = DB::getImages($blogId);
-                array_unshift($blgImgs, $blog['title_img_path']);
-                if (count($blgImgs) == 1)
-                    array_unshift($blgImgs, $blog['title_img_path']);
+    <div class="position-relative bg-dark" style="top: 0;">
 
-                for ($i = 0; $i < count($blgImgs); $i++) { ?>
-                    <div class="carousel-item <?php if ($i == 0) echo 'active' ?>">
-                        <img alt="title background" src="<?php echo Utils::topLevelImage($blgImgs[$i]); ?>"
-                             class="title-area-img">
-                        <div class="row position-absolute justify-content-center"
-                             style="top: 0; width: 100%; bottom: 0;">
-                            <div class="col-md-8 d-flex flex-column align-items-center position-absolute justify-content-end"
-                                 style="bottom: 0; top: 0;">
-                                <span class="text-white-50 text-uppercase text-center mt-3">
-                                    <?php echo (empty($blog['category_name'])?"Uncategorized":$blog['category_name']); ?>
-                                </span>
-                                <div class="row">
-                                    <span class="main-title text-white text-uppercase text-center col-10 col-md-9 mx-auto">
-                                        <?php echo $blog['title_text'] ?>
-                                    </span>
-                                </div>
-                                <img src="<?php echo DB::getUserProfilePicPath($blog['author_id']); ?>"
-                                     alt="author avatar"
-                                     style="margin-top: 3vw; width: 50px; height: auto"/>
-                                <span class="text-white small-font font-weight-bold">
-                                    <?php echo DB::getUserById($blog['author_id'])->name ?>
-                                </span>
-                                <div class="extra-small-font"><span class="text-white-50 mr-3">
-                                        <?php echo date("F j, Y", Utils::getTime($blog['created_at'])); ?>
-                                        </span>
-                                    <span
-                                            class="text-white text-white-50"><?php echo date("H:i", Utils::getTime($blog['created_at'])); ?></span>
-                                </div>
-                                <div style="margin-top: 2vw; margin-bottom: 2vw;">
-                                    <a href="single-post.php?id=<?php echo $blogId?>#comment-section" class="text-white-50 mr-3 extra-small-font"> <span
-                                                class="material-icons extra-small-font">forum</span> Comments
-                                        (<?php echo count(DB::getComments($blog['id'])); ?>)</a>
-                                    <a class="text-white-50 extra-small-font"> <span
-                                                class="material-icons extra-small-font">favorite_border</span>
-                                        Likes (<?php echo DB::getLikeCount($blog['id']) ?>)</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php } ?>
-            </div>
+        <div class="main-content-area position-relative" style="top: 0; left: 0; right: 0;">
 
-            <a class="carousel-control-prev" href="#myCarousel" role="button" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="sr-only">Previous</span>
-            </a>
-            <a class="carousel-control-next" href="#myCarousel" role="button" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="sr-only">Next</span>
-            </a>
-        </div><!--title area-->
-
-        <div class="main-content-area position-absolute" style="top: 0; left: 0; right: 0;">
-
-            <nav class="navbar navbar-expand-xl bg-transparent navbar-dark text-uppercase" style="z-index: 1000000;">
+            <nav class="navbar navbar-expand-xl navbar-dark text-uppercase" style="z-index: 1000000;">
                 <div class="navbar-brand mr-auto">
                     <a href="index.php" class="nav-link text-uppercase brand-font text-white font-weight-bolder">My
                         Blog</a>
@@ -229,15 +171,31 @@ if (isset($_POST['comment-box'])) {
                         No Blog Found To be Shown
                     </div>
                 <?php } else { ?>
-                    <div class="mt-5 mx-4">
-                        <p class="muted-font text-uppercase"><?php echo (empty($blog['category_name'])?"Uncategorized":$blog['category_name']); ?></p>
+                    <div class="mt-3 mx-4">
+                        <p class="muted-font text-uppercase"><?php echo(empty($blog['category_name']) ? "Uncategorized" : $blog['category_name']); ?></p>
                         <h3><?php echo $blog['title_text']; ?></h3>
                         <div class="blog-font">
                             <?php
+                            $images = DB::getImages($blog['id']);
+                            array_unshift($images, $blog['title_img_path']);
+                            $imgInd = 0;
                             $paras = Utils::getParagraphs($blog['blog_text'], 300);
-                            for ($i = 0; $i < count($paras); $i++) {
+                            for ($i = 0; $i < count($paras) - 1 || count($paras) == 1; $i++) {
                                 echo "<p class='text-justify'>$paras[$i]</p>";
+                                if ($imgInd < count($images)) {
+                                    $path = $images[$imgInd];
+                                    $path = Utils::topLevelImage($path);
+                                    echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
+                                    $imgInd++;
+                                }
                             }
+                            while ($imgInd < count($images)) {
+                                $path = $images[$imgInd];
+                                $path = Utils::topLevelImage($path);
+                                echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
+                                $imgInd++;
+                            }
+                            echo "<p class='text-justify'>$paras[$i]</p>";
                             ?>
                         </div>
                         <div class="d-flex w-100 justify-content-end muted-font">
@@ -444,7 +402,8 @@ if (isset($_POST['comment-box'])) {
                                         <div class="col-8 flex-column">
                                             <div class="px-3 row"><span
                                                         class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
-                                                <a href="single-post.php?id=<?php echo $res['id'];?>#comment-section" class="material-icons extra-small-font">forum</a>
+                                                <a href="single-post.php?id=<?php echo $res['id']; ?>#comment-section"
+                                                   class="material-icons extra-small-font">forum</a>
                                                 <span class="extra-small-font"> &nbsp <?php echo count(DB::getComments($res['id'])) ?></span>
                                             </div>
                                             <div class="p-0 font-weight-bold small-font two-line-text"><a
@@ -474,7 +433,8 @@ if (isset($_POST['comment-box'])) {
                                         <div class="col-8 flex-column">
                                             <div class="px-3 row"><span
                                                         class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
-                                                <a href="single-post.php?id=<?php echo $res['id'];?>#comment-section" class="material-icons extra-small-font">forum</a>
+                                                <a href="single-post.php?id=<?php echo $res['id']; ?>#comment-section"
+                                                   class="material-icons extra-small-font">forum</a>
                                                 <span class="extra-small-font"> &nbsp <?php echo count(DB::getComments($res['id'])) ?></span>
                                             </div>
                                             <div class="p-0 font-weight-bold small-font two-line-text"><a
