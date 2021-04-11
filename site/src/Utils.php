@@ -77,7 +77,7 @@ class Utils
 
     public static function getBaseUrl()
     {
-        return "/Pasco%20blog%20template/site";
+        return "/Pasco-blog-template/site";
     }
 
 
