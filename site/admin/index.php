@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 } else $user = DB::getUserById($_SESSION['user_id']);
 
 
-$query = "SELECT b.id, b.title_text, b.created_at, u.name, c.category_name FROM blogs b join users u on u.id = b.author_id join categories c on c.id = b.category_id";
+$query = "SELECT b.id, b.title_text, b.created_at, u.name username, c.category_name FROM blogs b left join users u on u.id = b.author_id left join categories c on c.id = b.category_id";
 $conj = "WHERE";
 if ($user->isAdmin && isset($_GET['user_id']) && !empty($_GET['user_id'])) {
     $query .= " $conj u.id = " . $_GET['user_id'];
@@ -245,9 +245,10 @@ $blogs = DB::conn()->query($query);
                             <tr>
                                 <td scope="row"><?php echo Utils::titleCase($blg['title_text']); ?></td>
                                 <?php if ($user->isAdmin) {
-                                    echo '<td scope="col" class="text-center">' . $blg['name'] . '</td>';
+                                    echo '<td scope="col" class="text-center">' . (empty($blg['username']) ? "Unknown" : $blg['username']) . '</td>';
                                 } ?>
-                                <td scope="row" class="text-center"><?php echo $blg['category_name']; ?></td>
+                                <td scope="row"
+                                    class="text-center"><?php echo empty($blg['category_name']) ? "Uncategorized" : $blg['category_name']; ?></td>
                                 <td scope="row" class="text-center">
                                     <a class="text-dark" href="comments.php?blog_id=<?php echo $blgId; ?>">
                                         <?php echo count(DB::getComments($blgId)) ?>

@@ -52,7 +52,7 @@ if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES
         if (pathinfo($imageSavePath, PATHINFO_EXTENSION) != $extension) {
             unlink($imageSavePath);
         }
-        $imageSavePath = "../images/".pathinfo($imageSavePath, PATHINFO_FILENAME) . "." . $extension;
+        $imageSavePath = "../images/" . pathinfo($imageSavePath, PATHINFO_FILENAME) . "." . $extension;
         if (DB::updateBlogPost($title, $blogText, $imageSavePath, $blogCategoryID, $blogID)) {
             move_uploaded_file($titleImg['tmp_name'], $imageSavePath);
 
@@ -274,7 +274,8 @@ else if ($msg == "no_id")
                 <div class="form-group">
                     <label for="blogCategory">Blog Category</label>
                     <select name="blog_cat" class="form-control" id="blogCategory" required>
-                        <option <?php echo($editBlgId == null ? 'selected' : ''); ?> disabled value="">Select Blog
+                        <option <?php $selected = empty($editBlg['category_id']);
+                        echo($selected ? 'selected' : ''); ?> disabled value="">Select Blog
                             Category
                         </option>
                         <?php

@@ -14,10 +14,10 @@ $user = DB::getUserById($_SESSION['user_id']);
 $userId = $user->id;
 $query = "SELECT c.id, c.comment_text, b.title_text, u.name, u.id as user_id FROM
     (SELECT id, title_text FROM blogs WHERE author_id = $userId) b
-    JOIN comments c ON c.blog_id = b.id JOIN users u on c.user_id = u.id";
+    JOIN comments c ON c.blog_id = b.id LEFT JOIN users u on c.user_id = u.id";
 if ($user->isAdmin)
     $query = "SELECT c.id, c.comment_text, b.title_text, u.name, u.id as user_id FROM
-    blogs b JOIN comments c ON c.blog_id = b.id JOIN users u on c.user_id = u.id";
+    blogs b JOIN comments c ON c.blog_id = b.id left JOIN users u on c.user_id = u.id";
 
 if (isset($_GET["my_comments"])) {
     $query = "SELECT c.id, c.comment_text, b.title_text, u.name, u.id as user_id FROM
@@ -194,7 +194,7 @@ $comments = DB::conn()->query($query);
                                 <td scope="row"><?php echo $commentId ?></td>
                                 <td scope="row"><?php echo $comment['comment_text']; ?></td>
                                 <td scope="row"><?php echo $comment['title_text']; ?></td>
-                                <td scope="row" class="text-center"><?php echo $comment['name']; ?></td>
+                                <td scope="row" class="text-center"><?php echo empty($comment['name'])?"Unknown":$comment['name']; ?></td>
                                 <td scope="row" class="text-center">
                                     <a href="comment-delete.php?<?php echo 'id=' . $comment['id']; ?>"
                                        class="btn btn-sm btn-outline-danger"

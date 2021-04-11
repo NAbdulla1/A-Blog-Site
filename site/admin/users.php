@@ -93,6 +93,18 @@ else if ($msg != "")
     <span aria-hidden="true">&times;</span>
   </button></div>';
 ?>
+<?php
+if (isset($_GET['delete'])) {
+    if ($_GET['delete'] == "0")
+        echo '<div class="alert alert-warning mx-auto col-md-6 mt-1" role="alert">User Delete Failed<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button></div>';
+    else if ($_GET['delete'] == "1")
+        echo '<div class="alert alert-success mx-auto col-md-6 mt-1" role="alert">User deleted successfully<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button></div>';
+}
+?>
 <div class="container-fluid">
     <div class="row mt-5 position-relative">
         <div class="col-3 col-md-2 p-0 m-0 pt-1 h-100 ml-md-3 rounded"
@@ -146,8 +158,8 @@ else if ($msg != "")
                 <?php } ?>
             </ul>
         </div><!--left panel-->
-        <div class="col-7 col-md-8 row mx-auto">
-            <div class="col-md-7 mx-auto shadow">
+        <div class="col-7 col-md-9 row mx-auto">
+            <div class="col-md-8 mx-auto shadow">
                 <h3 class="h3 text-center">Users</h3>
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -179,6 +191,12 @@ else if ($msg != "")
                                        onclick="return confirm('Are you sure to toggle admin status? <?php echo $userSelfAdmin; ?>')">
                                         admin_panel_settings
                                     </a>
+                                    <a href="users-delete.php?id=<?php echo $cuser['id'] ?>"
+                                       class="btn btn-sm btn-outline-danger material-icons"
+                                       data-toggle="tooltip" data-placement="top" title="Delete User"
+                                       onclick="return confirm('Are you sure to delete user, <?php echo $cuser['name']; ?>?')">
+                                        person_remove
+                                    </a>
                                 </td>
                             </tr>
                             <?php
@@ -188,7 +206,7 @@ else if ($msg != "")
                     </table>
                 </div>
             </div>
-            <div class="ml-md-1 col-md-4 mx-auto shadow">
+            <div class="ml-md-1 col-md-3 mx-auto shadow">
                 <h3 class="h3 text-center">Create User</h3>
                 <form action="users.php" method="post">
                     <div class="form-group">

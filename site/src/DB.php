@@ -26,7 +26,6 @@ class DB
         $stmt->bind_param("s", $email);
         $stmt->execute();
         return $stmt->get_result()->num_rows > 0;
-        return (self::conn()->query("SELECT * FROM users where email = '$email';")->num_rows > 0);
     }
 
     public static function encryptPassword($pass)
@@ -48,7 +47,6 @@ class DB
         return new User($userRes['id'], $userRes['name'], $userRes['email'], $userRes['password'], $userRes['profile_pic_path'], $userRes['is_admin']);
     }
 
-
     public static function getUserById($id): ?User
     {
         if ($id == null) return null;
@@ -63,12 +61,6 @@ class DB
         while ($imgPath = $res->fetch_assoc())
             array_push($images, $imgPath['path']);
         return $images;
-    }
-
-    public static function getUser($authorId): array
-    {
-        $res = self::conn()->query("SELECT * FROM users where id = $authorId");
-        return $res->fetch_assoc();
     }
 
     public static function get3RandomPost(): array
