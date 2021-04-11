@@ -25,35 +25,21 @@ function logIn($next = "")
 
 if (isLoggedIn()) $user = DB::getUserById($_SESSION['user_id']);
 
-$blog = null;
-$blogId = null;
-if (isset($_GET['id'])) {
-    $blogId = $_GET['id'];
-    $blog = DB::conn()->query("SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b left join users u on u.id = b.author_id left join categories c on c.id = b.category_id WHERE b.id = $blogId;");
-    if ($blog)
-        $blog = $blog->fetch_assoc();
-    else {
-        $_SESSION['msg'] = "no_id";
-        header("Location: index.php");
-        exit();
-    }
+$query = "SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b LEFT JOIN users u ON u.id = b.author_id LEFT JOIN categories c ON c.id = b.category_id";
+
+$conj = "WHERE";
+$msg = "";
+if (isset($_GET['cat_id']) && !empty($_GET['cat_id'])) {
+    $query .= " $conj c.id = " . $_GET['cat_id'];
+    $conj = "AND";
 } else {
-    $_SESSION['msg'] = "no_id";
-    header("Location: index.php");
-    exit();
+    $msg = "No category specified";
 }
 
-if (isset($_POST['comment-box'])) {
-    $commentText = $_POST['comment-box'];
-    if (strlen($commentText) > 0) {
-        $userID = $_SESSION['user_id'];
-        $sql = "INSERT INTO comments(comment_text, blog_id, user_id) VALUES (?, ?, ?)";
-        $stmt = DB::conn()->prepare($sql);
-        $stmt->bind_param("sii", $commentText, $blogId, $userID);
-        $stmt->execute();
-        header("Location: single-post.php?id=$blogId#comment-section");
-    }
-}
+$query .= " ORDER BY created_at desc;";
+$blogs = DB::conn()->query($query);
+if ($blogs->num_rows == 0)
+    $msg = "No Blogs found";
 ?>
 
 <!doctype html>
@@ -166,112 +152,103 @@ if (isset($_POST['comment-box'])) {
     <div class="main-content-area row">
         <div class="col-md-8"><!--left column-->
             <div class="articles mr-md-1 ml-md-n3">
-                <?php if ($blog == null) { ?>
-                    <div class="alert alert-warning h2 mt-5" role="alert">
-                        No Blog Found To be Shown
+                <?php if (empty($msg)){
+                while ($cblg = $blogs->fetch_assoc()) {
+                    $author = DB::getUserById($cblg['author_id']); ?>
+                    <div class="card mb-4 bg-white d-flex flex-md-row rounded flex-wrap">
+                        <div class="card-img-top col-12 col-md-6 col-lg-5 no-gutters p-0">
+                            <!--image and the content overlaying on the image-->
+                            <div class="position-relative ml-0">
+                                <img src="<?php echo Utils::topLevelImage($cblg['title_img_path']) ?>" alt="alt"
+                                     class="img-fluid card-img-top"
+                                     style="object-fit: cover">
+                                <!--<a href="#"> <span class="text-white place-center material-icons"
+                                                   style="font-size: 48px">play_circle_outline</span></a>-->
+                                <div class="row position-absolute align-items-baseline on-image-text">
+                                        <span class="text-uppercase mr-auto text-white">
+                                            <?php echo(empty($cblg['category_name']) ? "Uncategorized" : $cblg['category_name']); ?>
+                                        </span>
+                                    <div class="d-flex justify-content-end">
+                                        <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section">
+                                            <span class="material-icons extra-small-font text-white ">forum</span>
+                                            <span class="mr-4 text-white extra-small-font">
+                                                    <?php echo count(DB::getComments($cblg['id']));
+                                                    $cbid = $cblg['id']; ?>
+                                                </span>
+                                        </a>
+                                        <a>
+                                                <span id="like_icon_overlay_<?php echo $cbid ?>"
+                                                      class="material-icons extra-small-font text-white">
+                                                    <?php
+                                                    echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
+                                                        ? 'favorite' : 'favorite_border';
+                                                    ?>
+                                                </span>
+                                            <span class="text-white extra-small-font"
+                                                  id="like_count_<?php echo $cbid; ?>">&nbsp; <?php echo(DB::getLikeCount($cblg['id'])); ?></span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-7">
+                            <div class="border-bottom py-2">
+                                <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
+                                            class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span>
+                                </a>
+                                <span class="two-line-text open-sans-font small-font"><?php echo $cblg['blog_text'] ?></span>
+                            </div>
+                            <div class="media mt-2">
+                                <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"
+                                     class="mr-3 rounded-circle" alt="alt"
+                                     style="max-width: 40px">
+                                <div class="media-body">
+                                    <span class="mt-0 small-font mb-0"><?php echo ucwords($author->name) ?></span>
+                                    <br>
+                                    <span class="extra-small-font text-muted">
+                                            <?php echo date("F j, Y", Utils::getTime($cblg['created_at'])); ?>&nbsp;&nbsp;<?php echo date("H:i", Utils::getTime($cblg['created_at'])); ?>
+                                        </span>
+                                </div>
+                                <div class="dropdown my-auto">
+                                    <a class="dropdown-toggle nav-link text-dark text-right mx-0 px-0" type="button"
+                                       id="article1-option"
+                                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="material-icons">more_vert</i></a>
+                                    <div class="dropdown-menu dropdown-menu-right"
+                                         aria-labelledby="article1-option">
+                                        <?php if (isLoggedIn()) { ?>
+                                            <a id="like_icon_dropdown_<?php echo $cbid; ?>"
+                                               class="dropdown-item material-icons"
+                                               href="#">
+                                                <?php
+                                                echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
+                                                    ? 'favorite' : 'favorite_border';
+                                                ?>
+                                            </a>
+                                            <a class="dropdown-item material-icons" href="#">comment</a>
+                                            <a class="dropdown-item material-icons" href="#">share</a>
+                                        <?php } else { ?>
+                                            <a class="dropdown-item" href="login.php?next=index.php">Please
+                                                Login</a>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                <?php } else { ?>
-                    <div class="mt-3 mx-4">
-                        <p class="muted-font text-uppercase"><?php echo(empty($blog['category_name']) ? "Uncategorized" : $blog['category_name']); ?></p>
-                        <h3><?php echo $blog['title_text']; ?></h3>
-                        <div class="blog-font">
-                            <?php
-                            $images = DB::getImages($blog['id']);
-                            array_unshift($images, $blog['title_img_path']);
-                            $imgInd = 0;
-                            $paras = Utils::getParagraphs($blog['blog_text'], 300);
-                            for ($i = 0; $i < count($paras) - 1 || count($paras) == 1; $i++) {
-                                echo "<p class='text-justify'>$paras[$i]</p>";
-                                if ($imgInd < count($images)) {
-                                    $path = $images[$imgInd];
-                                    $path = Utils::topLevelImage($path);
-                                    echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
-                                    $imgInd++;
-                                }
-                            }
-                            while ($imgInd < count($images)) {
-                                $path = $images[$imgInd];
-                                $path = Utils::topLevelImage($path);
-                                echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
-                                $imgInd++;
-                            }
-                            echo "<p class='text-justify'>$paras[$i]</p>";
-                            ?>
-                        </div>
-                        <div class="d-flex w-100 justify-content-end muted-font">
-                            <span class="position-relative" style="bottom: 3px">SHARE</span>
-                            <a class="text-reset px-2" href="#"><i class="fa fa-facebook"></i></a>
-                            <a class="text-reset px-2" href="#"><i class="fa fa-twitter"></i></a>
-                            <a class="text-reset px-2" href="#"><i class="fa fa-pinterest"></i></a>
-                            <a class="text-reset px-2" href="#"><i class="fa fa-instagram"></i></a>
-                            <a class="text-reset px-2" href="#"><i class="fa fa-google-plus"></i></a>
-                        </div>
+                    <?php
+                }
+                } else{ ?>
+                    <div class="alert alert-info alert-dismissible fade show mx-auto col-md-9" role="alert">
+                        <strong><?php echo $msg?></strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                 <?php } ?>
+
+                <!--todo pagination-->
             </div>
-            <?php if ($blog != null) {
-                $comments = DB::getComments($blogId); ?>
-                <div class="row mx-4 mt-5" id="comment-section">
-                    <div class="col">
-                        <p class="muted-font"><?php echo count($comments) ?> comments</p>
-                        <?php
-                        foreach ($comments as $comment) {
-                            $user = DB::getUserById($comment['user_id']);
-                            $commentText = $comment['comment_text'];
-                            $profile_pic_path = Utils::topLevelImage($user->profile_pic_path);
-                            $userName = $user->name;
-                            echo "
-                    <div class='media mb-4'>
-                        <img src='$profile_pic_path' class='mr-3 rounded-circle' alt='commenter image' style='width: 70px;'>
-                        <div class='media-body'>
-                            <h5 class='mt-0'>$userName</h5>
-                            <p class='blog-font'>$commentText</p>
-                            <button class='reply-btn btn btn-sm'>REPLY</button>
-                        </div>
-                    </div>
-                    ";
-                        }
-                        ?>
-                        <?php if (isLoggedIn()) { ?>
-                            <div class="media mb-4">
-                                <img src='<?php echo Utils::topLevelImage(DB::getUserById($_SESSION['user_id'])->profile_pic_path) ?>'
-                                     class="mr-3 rounded-circle" alt="commenter image" style="width: 60px">
-                                <div class="media-body pt-2">
-                                    <form action="single-post.php?id=<?php echo $blogId ?>" method="post">
-                                        <div class="form-group">
-                                            <label for="comment-box" class="sr-only">Comment box</label>
-                                            <input class="p-4 w-100 form-control-lg border-secondary"
-                                                   placeholder="JOIN THE DISCUSSION"
-                                                   id="comment-box" name="comment-box">
-                                            <div class="text-right pt-1">
-                                                <button hidden type="button" class="btn btn-sm btn-outline-secondary"
-                                                        name="comment-submit">
-                                                    Comment
-                                                </button>
-                                            </div>
-                                            <p></p>
-                                            <div class="d-flex justify-content-end muted-font">
-                                                <small class="px-2">COMMENTED WITH</small>
-                                                <i class="px-1 fa fa-twitter"></i>
-                                                <i class="text-dark px-1 fa fa-facebook"></i>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        <?php } else { ?>
-                            <div class="media mb-4">
-                                <img src='images/dummy_pic.png'
-                                     class="mr-3 rounded-circle" alt="commenter image" style="width: 60px">
-                                <div class="media-body pt-2">
-                                    <a href="login.php" class="h3">Please Login to Comment</a>
-                                </div>
-                            </div>
-                        <?php } ?>
-                    </div>
-                </div>
-                <?php
-            } ?>
         </div><!--articles area-->
 
         <div class="right-side-bar col-md-4 bg-white rounded">
@@ -784,26 +761,27 @@ if (isset($_POST['comment-box'])) {
     $(document).ready(function () {
         //like count
         <?php
-        /*        while ($blg = $blog) {
-                $dropdownLike = "#like_icon_dropdown_" . $blg['id'];
-                $overlayLike = "#like_icon_overlay_" . $blg['id'];
-                $countLike = "#like_count_" . $blg['id'];
-                */?>/*
-        $('<?php /*echo $dropdownLike*/?>').click(function (event) {
+        $blogsa = DB::conn()->query($query);
+        while ($blg = $blogsa->fetch_assoc()) {
+        $dropdownLike = "#like_icon_dropdown_" . $blg['id'];
+        $overlayLike = "#like_icon_overlay_" . $blg['id'];
+        $countLike = "#like_count_" . $blg['id'];
+        ?>
+        $('<?php echo $dropdownLike?>').click(function (event) {
             event.preventDefault();
-            $url = "<?php /*echo Utils::getBaseUrl();*/?>/toggle_like.php?blog_id=<?php /*echo $blg['id']*/?>";
+            $url = "<?php echo Utils::getBaseUrl();?>/toggle_like.php?blog_id=<?php echo $blg['id']?>";
             jQuery.get($url, function (response, status) {
                 if (status === 'success') {
-                    $('<?php /*echo $overlayLike*/?>')[0].textContent = response.liked ? 'favorite' : 'favorite_border';
-                    $('<?php /*echo $dropdownLike*/?>')[0].textContent = response.liked ? 'favorite' : 'favorite_border';
-                    $('<?php /*echo $countLike*/?>')[0].textContent = response.likeCount;
+                    $('<?php echo $overlayLike?>')[0].textContent = response.liked ? 'favorite' : 'favorite_border';
+                    $('<?php echo $dropdownLike?>')[0].textContent = response.liked ? 'favorite' : 'favorite_border';
+                    $('<?php echo $countLike?>')[0].textContent = response.likeCount;
                 }
             });
         });
-        */<?php
-        /*        break;
-                }
-                */?>
+        <?php
+        }
+        ?>
+
         $('.reply-btn').click(function (event) {
             var commenter = event.target.parentElement.firstElementChild.textContent;
             document.getElementById('comment-box').value = "@" + commenter + " ";

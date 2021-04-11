@@ -185,7 +185,7 @@ $numBlogs = $blogs->num_rows;
                         <?php $categories = DB::conn()->query("SELECT * FROM categories;");
                         $limit = 0;
                         while ($limit < 5 && $cat = $categories->fetch_assoc()) { ?>
-                            <a href="index.php?cat_id=<?php echo $cat['id'] ?>"
+                            <a href="category.php?cat_id=<?php echo $cat['id'] ?>"
                                class="ml-1 nav-link text-white text-right
                            <?php if (isset($_GET['cat_id']) && $_GET['cat_id'] == $cat['id']) echo 'active'; ?>"
                                type="button">
@@ -554,7 +554,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                         array_push($catUsed, $cat['id']); ?>
                         <li class="py-2 list-group-item border-left-0 border-right-0 border-bottom">
                             <div class="row justify-content-between open-sans-font small-font">
-                                <div><a href="index.php?cat_id=<?php echo $cat['id'] ?>"
+                                <div><a href="category.php?cat_id=<?php echo $cat['id'] ?>"
                                         class="text-dark"><?php echo $cat['category_name'] ?></a></div>
                                 <div class="font-weight-bold"><?php echo $cat['count'] ?></div>
                             </div>
@@ -569,7 +569,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                             ?>
                             <li class="py-2 list-group-item border-left-0 border-right-0 border-bottom">
                                 <div class="row justify-content-between open-sans-font small-font">
-                                    <div><a href="index.php?cat_id=<?php echo $cat['id'] ?>"
+                                    <div><a href="category.php?cat_id=<?php echo $cat['id'] ?>"
                                             class="text-dark"><?php echo $cat['category_name'] ?></a></div>
                                     <div class="font-weight-bold">0</div>
                                 </div>
