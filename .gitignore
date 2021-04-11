@@ -2,3 +2,4 @@ vendor
 .idea
 logs.log
 *.zip
+scratch.php

@@ -25,7 +25,7 @@ function logIn($next = "")
 if (isLoggedIn()) $user = DB::getUserById($_SESSION['user_id']);
 
 
-$query = "SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b join users u on u.id = b.author_id join categories c on c.id = b.category_id";
+$query = "SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b LEFT JOIN users u ON u.id = b.author_id LEFT JOIN categories c ON c.id = b.category_id";
 
 $conj = "WHERE";
 
@@ -118,7 +118,8 @@ $numBlogs = $blogs->num_rows;
                             <div class="col-md-8 d-flex flex-column align-items-center position-absolute justify-content-end"
                                  style="bottom: 0; top: 0;">
                                 <span class="text-white-50 text-uppercase text-center mt-3">
-                                    <?php echo DB::getCategoryById($post['category_id']); ?>
+                                    <?php $catgr = DB::getCategoryById($post['category_id']);
+                                    echo (empty($catgr)?"Uncategorized":$catgr);?>
                                 </span>
                                 <div class="row">
                                     <span class="main-title text-white text-uppercase text-center col-10 col-md-9 mx-auto">
@@ -238,7 +239,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                               style="font-size: 48px">play_circle_outline</span></a>-->
                             <div class="row position-absolute align-items-baseline on-image-text">
                             <span class="text-uppercase mr-auto text-white col-md-6">
-                                <?php echo $cblg['category_name']; ?>
+                                <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
                             </span>
                                 <div class="col-md-6 d-flex justify-content-end">
                                     <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section">
@@ -334,7 +335,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                                        style="font-size: 48px">play_circle_outline</span></a>-->
                                     <div class="row position-absolute align-items-baseline on-image-text">
                                         <span class="text-uppercase mr-auto text-white">
-                                            <?php echo $cblg['category_name'] ?>
+                                            <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
                                         </span>
                                         <div class="d-flex justify-content-end">
                                             <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section">
@@ -424,7 +425,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                                  class="card-img-top card-img fixed-height-img-2">
                                             <div class="row position-absolute align-items-baseline on-image-text">
                                                 <span class="text-uppercase mr-auto text-white col-md-6">
-                                                    <?php echo $cblg['category_name'] ?>
+                                                    <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
                                                 </span>
                                                 <div class="col-md-6 d-flex justify-content-end align-items-end">
                                                     <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section"

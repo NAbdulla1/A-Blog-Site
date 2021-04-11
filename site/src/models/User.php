@@ -19,4 +19,9 @@ class User
         $this->profile_pic_path = $profile_pic_path;
         $this->isAdmin = $isAdmin;
     }
+
+    public static function nullUser()
+    {
+        return new User(null, "Unknown", "Unknown", "", "../images/dummy_pic2.jpg");
+    }
 }

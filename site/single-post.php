@@ -29,7 +29,7 @@ $blog = null;
 $blogId = null;
 if (isset($_GET['id'])) {
     $blogId = $_GET['id'];
-    $blog = DB::conn()->query("SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b join users u on u.id = b.author_id join categories c on c.id = b.category_id WHERE b.id = $blogId;");
+    $blog = DB::conn()->query("SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b left join users u on u.id = b.author_id left join categories c on c.id = b.category_id WHERE b.id = $blogId;");
     if ($blog)
         $blog = $blog->fetch_assoc();
     else {
@@ -133,7 +133,7 @@ if (isset($_POST['comment-box'])) {
                             <div class="col-md-8 d-flex flex-column align-items-center position-absolute justify-content-end"
                                  style="bottom: 0; top: 0;">
                                 <span class="text-white-50 text-uppercase text-center mt-3">
-                                    <?php echo $blog['category_name']; ?>
+                                    <?php echo (empty($blog['category_name'])?"Uncategorized":$blog['category_name']); ?>
                                 </span>
                                 <div class="row">
                                     <span class="main-title text-white text-uppercase text-center col-10 col-md-9 mx-auto">
@@ -230,7 +230,7 @@ if (isset($_POST['comment-box'])) {
                     </div>
                 <?php } else { ?>
                     <div class="mt-5 mx-4">
-                        <p class="muted-font text-uppercase"><?php echo $blog['category_name']; ?></p>
+                        <p class="muted-font text-uppercase"><?php echo (empty($blog['category_name'])?"Uncategorized":$blog['category_name']); ?></p>
                         <h3><?php echo $blog['title_text']; ?></h3>
                         <div class="blog-font">
                             <?php

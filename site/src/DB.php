@@ -49,7 +49,7 @@ class DB
 
     public static function getUserById($id): ?User
     {
-        if ($id == null) return null;
+        if (empty($id) || $id == null) return User::nullUser();
         $userRes = self::conn()->query("SELECT * from users where id = $id")->fetch_assoc();
         return new User($userRes['id'], $userRes['name'], $userRes['email'], $userRes['password'], $userRes['profile_pic_path'], $userRes['is_admin']);
     }
@@ -65,7 +65,7 @@ class DB
 
     public static function get3RandomPost(): array
     {
-        $res = self::conn()->query("SELECT * FROM blogs ORDER BY RAND() LIMIT 3;");
+        $res = self::conn()->query("SELECT * FROM blogs WHERE author_id IS NOT NULL ORDER BY RAND() LIMIT 3;");
         $posts = [];
         while ($pst = $res->fetch_assoc())
             array_push($posts, $pst);
