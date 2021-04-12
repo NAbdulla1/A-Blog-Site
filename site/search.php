@@ -850,7 +850,12 @@ endd:
     $(document).ready(function () {
         //like count
         <?php
-        $blogsa = DB::conn()->query($query);
+        $stmt = DB::conn()->prepare($query);
+        $search2 = "%".$search."%";
+        $stmt->bind_param("s", $search2);
+        $stmt->execute();
+
+        $blogsa = $stmt->get_result();
         while ($blg = $blogsa->fetch_assoc()) {
         $dropdownLike = "#like_icon_dropdown_" . $blg['id'];
         $overlayLike = "#like_icon_overlay_" . $blg['id'];
@@ -869,6 +874,7 @@ endd:
         });
         <?php
         }
+        $stmt->close();
         ?>
 
         $('.reply-btn').click(function (event) {
