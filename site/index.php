@@ -265,7 +265,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                         <div class="card-body border-bottom mb-2">
                             <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
                                         class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span></a>
-                            <span class="open-sans-font two-line-text"><?php echo $cblg['blog_text'] ?></span>
+                            <span class="open-sans-font two-line-text"><?php echo Utils::getBlogTextForSummary($cblg['blog_text']) ?></span>
                         </div>
                         <?php $author = DB::getUserById($cblg['author_id']) ?>
                         <div class="media px-3 pb-2">
@@ -365,7 +365,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                     <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
                                                 class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span>
                                     </a>
-                                    <span class="two-line-text open-sans-font small-font"><?php echo $cblg['blog_text'] ?></span>
+                                    <span class="two-line-text open-sans-font small-font"><?php echo Utils::getBlogTextForSummary($cblg['blog_text']) ?></span>
                                 </div>
                                 <div class="media mt-2">
                                     <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"
@@ -450,7 +450,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                         <div class="card-body border-bottom mb-2">
                                             <a href='single-post.php<?php echo "?id=$cbid" ?>'> <span
                                                         class="text-dark big-font font-weight-bold one-line-text"><?php echo $cblg['title_text'] ?></span></a>
-                                            <span class="four-line-text"><?php echo $cblg['blog_text']; ?></span>
+                                            <span class="four-line-text"><?php Utils::getBlogTextForSummary($cblg['blog_text']); ?></span>
                                         </div>
                                         <div class="media px-3 pb-2">
                                             <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"

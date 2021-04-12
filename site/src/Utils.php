@@ -80,5 +80,10 @@ class Utils
         return "/Pasco-blog-template/site";
     }
 
+    public static function getBlogTextForSummary($blog_text): string
+    {
+        return strip_tags($blog_text);
+    }
+
 
 }

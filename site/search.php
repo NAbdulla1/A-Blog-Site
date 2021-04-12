@@ -226,7 +226,7 @@ endd:
                                     <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
                                                 class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span>
                                     </a>
-                                    <span class="two-line-text open-sans-font small-font"><?php echo $cblg['blog_text'] ?></span>
+                                    <span class="two-line-text open-sans-font small-font"><?php echo Utils::getBlogTextForSummary($cblg['blog_text']) ?></span>
                                 </div>
                                 <div class="media mt-2">
                                     <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"
