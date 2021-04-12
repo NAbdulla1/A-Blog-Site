@@ -34,7 +34,7 @@ if (isset($_GET['id'])) {
 if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES['title_img'], $_POST['check_list']) &&
     !empty($_POST['blog_title']) && !empty($_POST['blog_text']) && !empty($_POST['blog_cat']) && !empty($_FILES['title_img']) && !empty($_POST['check_list'])) {
     $title = Utils::filterInput($_POST['blog_title']);
-    $blogText = Utils::filterInput($_POST['blog_text']);
+    $blogText = $_POST['blog_text'];
     $blogCategoryID = Utils::filterInput($_POST['blog_cat']);
     $authorID = Utils::filterInput($_SESSION['user_id']);
 
@@ -56,38 +56,6 @@ if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES
         if (DB::updateBlogPost($title, $blogText, $imageSavePath, $blogCategoryID, $blogID)) {
             move_uploaded_file($titleImg['tmp_name'], $imageSavePath);
 
-            //delete previous images
-            $res = $conn->query("SELECT * FROM blog_images WHERE blog_id = $blogID;");
-            while (($rr = $res->fetch_assoc())) {
-                if (unlink($rr['path'])) $conn->query("DELETE FROM blog_images WHERE blog_id = $blogID");
-            }
-
-            //insert new images
-            $otherImgOk = true;
-            $sql = "INSERT INTO blog_images(path, blog_id) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            for ($img = 1; $img <= 3; $img++) {
-                $otherImgName = "other_img$img";
-                if (!isset($_FILES[$otherImgName])) {
-                    continue;
-                }
-
-                $otherImg = $_FILES[$otherImgName];
-                $extension = pathinfo($otherImg['name'], PATHINFO_EXTENSION);
-                if (!Utils::contains($valid_extensions, $extension, count($valid_extensions)) || $otherImg['error'] != '0' || $otherImg['size'] == 0) {
-                    MyLogger::dbg("Invalid image: $otherImgName");
-                    continue;
-                }
-                $otherImageSavePath = "../images/" . time() . rand(0, 10000) . ".$extension";
-                $stmt->bind_param("si", $otherImageSavePath, $blogID);
-                if ($stmt->execute()) {
-                    move_uploaded_file($otherImg['tmp_name'], $otherImageSavePath);
-                } else {
-                    $otherImgOk = false;
-                }
-            }
-            $stmt->close();
-
             //delete previous tags
             $res = $conn->query("SELECT * FROM blogs_has_tags WHERE blogs_id = $blogID;");
             while (($rr = $res->fetch_assoc())) {
@@ -105,7 +73,7 @@ if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES
                 }
             }
             $stmt->close();
-            header("Location: post-edit.php?id=$editBlgId&msg=blog-update-success&allOk=$otherImgOk");
+            header("Location: post-edit.php?id=$editBlgId&msg=blog-update-success");
         } else {
             header("Location: post-edit.php?id=$editBlgId&msg=blog-update-failed");
             $_SESSION['cause'] = "DB Connection Error";
@@ -264,7 +232,7 @@ else if ($msg == "no_id")
                     <label for="blogTitle">Blog Title</label>
                     <input name="blog_title" type="text" class="form-control" id="blogTitle"
                            placeholder="Blog Title"
-                           autofocus required value="<?php echo $editBlg['title_text']; ?>">
+                           autofocus required value="<?php echo htmlspecialchars($editBlg['title_text']); ?>">
                 </div>
                 <div class="form-group">
                     <label for="blogText">Blog Text</label>
@@ -316,16 +284,9 @@ else if ($msg == "no_id")
                     <label for="title-img">Cover Image</label>
                     <input type="file" class="form-control-file" name="title_img" required>
                 </div>
-                <?php
-                for ($img = 1; $img <= 3; $img++) {
-                    echo "
-                    <div class='form-group'>
-                        <label for='other-img$img' class='d-inline'>Other Image$img</label>
-                        <input type='file' class='form-control-file' name='other_img$img' id='other-img$img'>
-                    </div>";
-                }
-                ?>
-                <button type="submit" class="btn btn-primary" name="submit">Submit</button>
+                <button type="submit" class="btn btn-primary" name="submit"
+                        onclick="nicEditors.findEditor('blogText').saveContent();">Submit
+                </button>
             </form>
         </div>
     </div>
@@ -333,5 +294,18 @@ else if ($msg == "no_id")
 
 <script src="../js/jquery-3.5.1.slim.js"></script>
 <script src="../js/bootstrap.bundle.js"></script>
+
+<!--nicEditor-->
+<script src="http://js.nicedit.com/nicEdit-latest.js" type="text/javascript"></script>
+<script type="text/javascript">
+    bkLib.onDomLoaded(function () {
+        nicEditors.findEditor('blogText').setContent("hello content");
+    });
+</script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        new nicEditor({fullPanel: true}).panelInstance('blogText');
+    });
+</script>
 </body>
 </html>

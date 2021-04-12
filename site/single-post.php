@@ -176,26 +176,7 @@ if (isset($_POST['comment-box'])) {
                         <h3><?php echo $blog['title_text']; ?></h3>
                         <div class="blog-font">
                             <?php
-                            $images = DB::getImages($blog['id']);
-                            array_unshift($images, $blog['title_img_path']);
-                            $imgInd = 0;
-                            $paras = Utils::getParagraphs($blog['blog_text'], 300);
-                            for ($i = 0; $i < count($paras) - 1 || count($paras) == 1; $i++) {
-                                echo "<p class='text-justify'>$paras[$i]</p>";
-                                if ($imgInd < count($images)) {
-                                    $path = $images[$imgInd];
-                                    $path = Utils::topLevelImage($path);
-                                    echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
-                                    $imgInd++;
-                                }
-                            }
-                            while ($imgInd < count($images)) {
-                                $path = $images[$imgInd];
-                                $path = Utils::topLevelImage($path);
-                                echo "<img class='w-100 py-2' src='$path' alt='blog image'/>";
-                                $imgInd++;
-                            }
-                            echo "<p class='text-justify'>$paras[$i]</p>";
+                            echo $blog['blog_text'];
                             ?>
                         </div>
                         <div class="d-flex w-100 justify-content-end muted-font">

@@ -15,7 +15,7 @@ $user = DB::getUserById($_SESSION['user_id']);
 if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES['title_img'], $_POST['check_list']) &&
     !empty($_POST['blog_title']) && !empty($_POST['blog_text']) && !empty($_POST['blog_cat']) && !empty($_FILES['title_img']) && !empty($_POST['check_list'])) {
     $title = \Blog\Utils::filterInput($_POST['blog_title']);
-    $blogText = \Blog\Utils::filterInput($_POST['blog_text']);
+    $blogText = $_POST['blog_text'];
     $blogCategoryID = \Blog\Utils::filterInput($_POST['blog_cat']);
     $authorID = \Blog\Utils::filterInput($_SESSION['user_id']);
 
@@ -33,32 +33,6 @@ if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES
         if (DB::addBlogPost($title, $blogText, $imageSavePath, $authorID, $blogCategoryID, $blogID)) {
             move_uploaded_file($titleImg['tmp_name'], $imageSavePath);
 
-            $otherImgOk = true;
-            $sql = "INSERT INTO blog_images(path, blog_id) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            for ($img = 1; $img <= 3; $img++) {
-                $otherImgName = "other_img$img";
-                if (!isset($_FILES[$otherImgName])) {
-                    continue;
-                }
-
-                $otherImg = $_FILES[$otherImgName];
-                $extension = pathinfo($otherImg['name'], PATHINFO_EXTENSION);
-                if (!\Blog\Utils::contains($valid_extensions, $extension, count($valid_extensions)) || $otherImg['error'] != '0' || $otherImg['size'] == 0) {
-                    \Blog\MyLogger::dbg("Invalid image: $otherImgName");
-                    continue;
-                }
-                $otherImageSavePath = "../images/" . time() . rand(0, 10000) . ".$extension";
-                $sql = "INSERT INTO blog_images(path, blog_id) VALUES(?, ?)";
-                $stmt->bind_param("si", $otherImageSavePath, $blogID);
-                if ($stmt->execute()) {
-                    move_uploaded_file($otherImg['tmp_name'], $otherImageSavePath);
-                } else {
-                    $otherImgOk = false;
-                }
-            }
-            $stmt->close();
-
             $sql = "INSERT INTO blogs_has_tags(blogs_id, tags_id) VALUES (?, ?)";
             $stmt = $conn->prepare($sql);
             foreach ($_POST['check_list'] as $check) {
@@ -69,7 +43,7 @@ if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES
                 }
             }
             $stmt->close();
-            header("Location: post-create.php?msg=blog-save-success&allOk=$otherImgOk");
+            header("Location: post-create.php?msg=blog-save-success");
         } else {
             header("Location: post-create.php?msg=blog-save-failed");
             $_SESSION['cause'] = "DB Connection Error";
@@ -216,7 +190,7 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
                 </div>
                 <div class="form-group">
                     <label for="blogText">Blog Text</label>
-                    <textarea name="blog_text" class="form-control" id="blogText" rows="10" required></textarea>
+                    <textarea name="blog_text" class="form-control w-100" id="blogText" rows="10" required></textarea>
                 </div>
                 <div class="form-group">
                     <label for="blogCategory">Blog Category</label>
@@ -255,16 +229,8 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
                     <label for="title-img">Cover Image</label>
                     <input type="file" class="form-control-file" name="title_img" required>
                 </div>
-                <?php
-                for ($img = 1; $img <= 3; $img++) {
-                    echo "
-                    <div class='form-group'>
-                        <label for='other-img$img' class='d-inline'>Other Image$img</label>
-                        <input type='file' class='form-control-file' name='other_img$img' id='other-img$img'>
-                    </div>";
-                }
-                ?>
-                <button type="submit" class="btn btn-primary" name="submit">Submit</button>
+                <button type="submit" class="btn btn-primary" name="submit" id="submit_btn"
+                        onclick="nicEditors.findEditor('blogText').saveContent();">Submit</button>
             </form>
         </div>
     </div>
@@ -272,5 +238,13 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
 
 <script src="../js/jquery-3.5.1.slim.js"></script>
 <script src="../js/bootstrap.bundle.js"></script>
+
+<!--nicEditor-->
+<script src="http://js.nicedit.com/nicEdit-latest.js" type="text/javascript"></script>
+<script type="text/javascript">
+    $(document).ready(function (){
+        new nicEditor({fullPanel: true}).panelInstance('blogText');
+    });
+</script>
 </body>
 </html>
