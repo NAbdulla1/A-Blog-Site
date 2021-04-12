@@ -186,9 +186,18 @@ else if ($pic_update == 'updated')
                     <input readonly type="email" class="form-control" id="inputEmail4"
                            value="<?php echo $user->email ?>">
                 </div>
-                <div class="form-group">
-                    <label for="prof_pic">Profile Picture</label>
-                    <input type="file" class="form-control-file" id="prof_pic" name="profile_pic">
+                <div class="form-group form-row">
+                    <div class="col-8">
+                        <label for="prof_pic">Profile Picture</label>
+                        <input type="file" class="form-control-file" id="prof_pic" name="profile_pic">
+                    </div>
+                    <div class="col-4 d-flex flex-column align-items-end">
+                        <figure>
+                            <figcaption>Preview</figcaption>
+                            <img style="width: 50px" src="<?php echo $user->profile_pic_path ?>"
+                                 alt="Profile Picture Preview">
+                        </figure>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" name="submit">Update</button>
             </form>

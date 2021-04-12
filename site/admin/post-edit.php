@@ -31,54 +31,58 @@ if (isset($_GET['id'])) {
     } else $msg = "no_id";
 } else $msg = "no_id";
 
-if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_FILES['title_img'], $_POST['check_list']) &&
-    !empty($_POST['blog_title']) && !empty($_POST['blog_text']) && !empty($_POST['blog_cat']) && !empty($_FILES['title_img']) && !empty($_POST['check_list'])) {
+if (isset($_POST['blog_title'], $_POST['blog_text'], $_POST['blog_cat'], $_POST['check_list']) &&
+    !empty($_POST['blog_title']) && !empty($_POST['blog_text']) && !empty($_POST['blog_cat']) && !empty($_POST['check_list'])) {
     $title = Utils::filterInput($_POST['blog_title']);
     $blogText = $_POST['blog_text'];
     $blogCategoryID = Utils::filterInput($_POST['blog_cat']);
     $authorID = Utils::filterInput($_SESSION['user_id']);
 
-    $valid_extensions = ["jpg", "jpeg", "png"];
+    $conn = DB::conn();
+    $imageSavePath = $conn->query("SELECT title_img_path FROM blogs WHERE id = $editBlgId;")->fetch_assoc()['title_img_path'];
+    $newImage = false;
+    $titleImg = null;
+    if (isset($_FILES['title_img']) && !empty($_FILES['title_img'])) {
+        $valid_extensions = ["jpg", "jpeg", "png"];
 
-    $titleImg = $_FILES['title_img'];
-    $extension = pathinfo($titleImg['name'], PATHINFO_EXTENSION);
+        $titleImg = $_FILES['title_img'];
+        $extension = pathinfo($titleImg['name'], PATHINFO_EXTENSION);
 
-    if (!Utils::contains($valid_extensions, $extension, count($valid_extensions)) || $titleImg['error'] != '0' || $titleImg['size'] == 0) {
-        $message = "Invalid Cover Image";
-    } else {
-        $conn = DB::conn();
-        $blogID = $editBlgId;
-        $imageSavePath = $conn->query("SELECT title_img_path FROM blogs WHERE id = $blogID;")->fetch_assoc()['title_img_path'];
-        if (pathinfo($imageSavePath, PATHINFO_EXTENSION) != $extension) {
-            unlink($imageSavePath);
-        }
-        $imageSavePath = "../images/" . pathinfo($imageSavePath, PATHINFO_FILENAME) . "." . $extension;
-        if (DB::updateBlogPost($title, $blogText, $imageSavePath, $blogCategoryID, $blogID)) {
-            move_uploaded_file($titleImg['tmp_name'], $imageSavePath);
-
-            //delete previous tags
-            $res = $conn->query("SELECT * FROM blogs_has_tags WHERE blogs_id = $blogID;");
-            while (($rr = $res->fetch_assoc())) {
-                $conn->query("DELETE FROM blogs_has_tags WHERE blogs_id = $blogID");
-            }
-
-            //insert new tags
-            $sql = "INSERT INTO blogs_has_tags(blogs_id, tags_id) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            foreach ($_POST['check_list'] as $check) {
-                $tagID = (int)$check;
-                if ($check == '0' || is_int($tagID)) {
-                    $stmt->bind_param("ii", $blogID, $tagID);
-                    $res = $stmt->execute();
-                }
-            }
-            $stmt->close();
-            header("Location: post-edit.php?id=$editBlgId&msg=blog-update-success");
+        if (!Utils::contains($valid_extensions, $extension, count($valid_extensions)) || $titleImg['error'] != '0' || $titleImg['size'] == 0) {
+            $message = "Invalid Cover Image";
         } else {
-            header("Location: post-edit.php?id=$editBlgId&msg=blog-update-failed");
-            $_SESSION['cause'] = "DB Connection Error";
-            MyLogger::dbg($conn->error);
+            $conn = DB::conn();
+            $blogID = $editBlgId;
+            if (pathinfo($imageSavePath, PATHINFO_EXTENSION) != $extension) {
+                unlink($imageSavePath);
+            }
+            $imageSavePath = "../images/" . pathinfo($imageSavePath, PATHINFO_FILENAME) . "." . $extension;
+            $newImage = true;
         }
+    }
+
+    if (DB::updateBlogPost($title, $blogText, $imageSavePath, $blogCategoryID, $editBlgId)) {
+        if ($newImage) move_uploaded_file($titleImg['tmp_name'], $imageSavePath);
+
+        //delete previous tags
+        $conn->query("DELETE FROM blogs_has_tags WHERE blogs_id = $editBlgId");
+
+        //insert new tags
+        $sql = "INSERT INTO blogs_has_tags(blogs_id, tags_id) VALUES (?, ?)";
+        $stmt = $conn->prepare($sql);
+        foreach ($_POST['check_list'] as $check) {
+            $tagID = (int)$check;
+            if ($check == '0' || is_int($tagID)) {
+                $stmt->bind_param("ii", $editBlgId, $tagID);
+                $res = $stmt->execute();
+            }
+        }
+        $stmt->close();
+        header("Location: post-edit.php?id=$editBlgId&msg=blog-update-success");
+    } else {
+        header("Location: post-edit.php?id=$editBlgId&msg=blog-update-failed");
+        $_SESSION['cause'] = "DB Connection Error";
+        MyLogger::dbg($conn->error);
     }
 } else if (isset($_POST['submit']))
     header("Location: post-create.php?id=$editBlgId&msg=blog-update-failed");
@@ -286,9 +290,18 @@ else if ($msg == "no_id")
                         Load New Tags
                     </button>
                 </div>
-                <div class="form-group mt-3">
-                    <label for="title-img">Cover Image</label>
-                    <input type="file" class="form-control-file" name="title_img" required>
+                <div class="form-group mt-3 form-row">
+                    <div class="col-8">
+                        <label for="title-img">Cover Image (optional)</label>
+                        <input type="file" class="form-control-file" name="title_img">
+                    </div>
+                    <div class="col-4 d-flex flex-column align-items-end">
+                        <figure>
+                            <figcaption>Old Preview</figcaption>
+                            <img class="w-100" src="<?php echo $editBlg['title_img_path'] ?>"
+                                 alt="Profile Picture Preview">
+                        </figure>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" name="submit"
                         onclick="nicEditors.findEditor('blogText').saveContent();">Submit
