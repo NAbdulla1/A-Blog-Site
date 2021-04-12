@@ -3,6 +3,7 @@
 require_once __DIR__ . "/../../vendor/autoload.php";
 
 use Blog\DB;
+use Blog\Utils;
 
 if (session_id() == "") session_start();
 $user = null;
@@ -207,7 +208,7 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
                     </select>
                 </div>
                 <p class="mb-0">Tags (select at least one)</p>
-                <div class="form-check">
+                <div class="form-check" id="tag-check">
                     <?php
                     $result = DB::conn()->query("SELECT * FROM tags;");
                     while (($row = $result->fetch_assoc())) {
@@ -219,18 +220,25 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
                             </div>";
                     }
                     ?>
-                    <a target="_blank" class="btn btn-sm btn-outline-secondary py-0 d-inline-flex align-items-center"
+                    <a id="addNewTags" target="_blank"
+                       class="btn btn-sm btn-outline-secondary py-0 d-inline-flex align-items-center"
                        href="tags.php">
                         <span class="material-icons">add</span>
                         Add More Tags
                     </a>
+                    <button id="loadNewTags" type="button"
+                            class="ml-1 invisible btn btn-sm btn-outline-info py-0 d-inline-flex align-items-center">
+                        <span class="material-icons">sync</span>
+                        Load New Tags
+                    </button>
                 </div>
                 <div class="form-group mt-3">
                     <label for="title-img">Cover Image</label>
                     <input type="file" class="form-control-file" name="title_img" required>
                 </div>
                 <button type="submit" class="btn btn-primary" name="submit" id="submit_btn"
-                        onclick="nicEditors.findEditor('blogText').saveContent();">Submit</button>
+                        onclick="nicEditors.findEditor('blogText').saveContent();">Submit
+                </button>
             </form>
         </div>
     </div>
@@ -238,12 +246,50 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
 
 <script src="../js/jquery-3.5.1.slim.js"></script>
 <script src="../js/bootstrap.bundle.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
 <!--nicEditor-->
 <script src="http://js.nicedit.com/nicEdit-latest.js" type="text/javascript"></script>
 <script type="text/javascript">
-    $(document).ready(function (){
+    $(document).ready(function () {
         new nicEditor({fullPanel: true}).panelInstance('blogText');
+
+        //load tags dynamically
+        $('#addNewTags').click(function () {
+            $('#loadNewTags').removeClass('invisible');
+        });
+
+        var url = "<?php echo Utils::getBaseUrl();?>/admin/tags-json.php";
+        $('#loadNewTags').click(function () {
+            jQuery.get(url, function (tags, status) {
+                if (status === 'success') {
+                    let tagChecks = $('#tag-check');
+                    tagChecks.children('.form-check-inline').remove();//remove all children
+
+                    for (const tag of tags) {//add new tags
+                        let inputCh = document.createElement("input");
+                        inputCh.classList.add("form-check-input");
+                        inputCh.type = "checkbox";
+                        inputCh.id = "inlineCheckbox" + tag.id;
+                        inputCh.value = tag.id;
+                        inputCh.name = 'check_list[]';
+
+                        let label = document.createElement("label");
+                        label.classList.add("form-check-label", "mr-3");
+                        label.for = inputCh.id;
+                        label.append(tag['tag_name']);
+
+                        let div = document.createElement('div');
+                        div.classList.add("form-check", "form-check-inline", "my-1");
+                        div.append(inputCh, label);
+
+                        tagChecks.prepend(div);
+                    }
+                    $('#loadNewTags').addClass('invisible');
+                }
+            });
+        });
     });
 </script>
 </body>
