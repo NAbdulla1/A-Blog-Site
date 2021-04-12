@@ -33,6 +33,13 @@ if (isset($_GET['start_date'], $_GET['end_date']) && !empty($_GET['start_date'])
     $end = Utils::getMysqlDate($_GET['end_date'], true);
     $query .= " $conj b.created_at BETWEEN '$start' AND '$end'";
 }
+else{
+    $start = date('Y-m-d H:i:s', (time()-7*24*60*60));
+    $end = date('Y-m-d H:i:s', (time()));
+    $query .= " $conj b.created_at BETWEEN '$start' AND '$end'";
+    $_GET['start_date'] = date('Y-m-d', (time()-7*24*60*60));
+    $_GET['end_date'] = date('Y-m-d', (time()));
+}
 $query .= " ORDER BY created_at desc;";
 $blogs = DB::conn()->query($query);
 ?>
