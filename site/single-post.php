@@ -261,7 +261,7 @@ if (isset($_POST['comment-box'])) {
                             </div>
                         <?php } else { ?>
                             <div class="media mb-4">
-                                <img src='images/dummy_pic.png'
+                                <img src='images/dummy_pic2.jpg'
                                      class="mr-3 rounded-circle" alt="commenter image" style="width: 60px">
                                 <div class="media-body pt-2">
                                     <a href="login.php" class="h3">Please Login to Comment</a>
@@ -463,7 +463,7 @@ if (isset($_POST['comment-box'])) {
                             while ($tag = $tags->fetch_assoc()) {
                                 ?>
                                 <a class="btn-sm text-dark mr-2 my-1 font-weight-bold" style="background-color: #f5f5f5"
-                                   href="#"><?php echo $tag['tag_name'] ?></a>
+                                   href="tagged.php?tag_id=<?php echo $tag['id']?>"><?php echo $tag['tag_name'] ?></a>
                                 <?php
                             }
                             ?>

@@ -4,6 +4,7 @@ require_once __DIR__ . "/../vendor/autoload.php";
 
 use Blog\DB;
 use Blog\Utils;
+use Blog\models\User;
 
 if (session_id() == "") session_start();
 $user = null;
@@ -24,24 +25,38 @@ function logIn($next = "")
 
 if (isLoggedIn()) $user = DB::getUserById($_SESSION['user_id']);
 
-
-$query = "SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b LEFT JOIN users u ON u.id = b.author_id LEFT JOIN categories c ON c.id = b.category_id";
-
-$conj = "WHERE";
-
-if (isset($_GET['user_id']) && !empty($_GET['user_id'])) {
-    $query .= " $conj u.id = " . $_GET['user_id'];
-    $conj = "AND";
+$msg = "";
+$tagId = "";
+if (isset($_GET['tag_id']) && !empty($_GET['tag_id'])) {
+    $tagId = $_GET['tag_id'];
+} else {
+    $msg = "No Tag specified";
+    goto endd;
 }
+$query = "SELECT b.id, b.title_text, b.blog_text, b.title_img_path, b.created_at, b.author_id, u.name, c.category_name FROM blogs b JOIN (SELECT blogs_id FROM blogs_has_tags WHERE tags_id = $tagId) tg ON b.id = tg.blogs_id LEFT JOIN users u ON u.id = b.author_id LEFT JOIN categories c ON c.id = b.category_id";
 
-if (isset($_GET['cat_id']) && !empty($_GET['cat_id'])) {
-    $query .= " $conj c.id = " . $_GET['cat_id'];
-    $conj = "AND";
+$totalPosts = DB::conn()->query($query)->num_rows;
+
+$page = 1;
+$limit = 3;
+if (isset($_GET['page']) && !empty($_GET['page'])) {
+    $page = max($page, (int)$_GET['page']);
 }
+if (isset($_GET['limit']) && !empty($_GET['limit'])) {
+    $limit = max(1, (int)$_GET['limit']);
+}
+$offset = ($page - 1) * $limit;
+$query .= " ORDER BY created_at DESC LIMIT $limit OFFSET $offset;";
 
-$query .= " ORDER BY created_at desc;";
 $blogs = DB::conn()->query($query);
-$numBlogs = $blogs->num_rows;
+if ($blogs->num_rows == 0)
+    $msg = "No Blogs found";
+
+$expand = 2;
+$totalPages = (int)(($totalPosts + $limit - 1) / $limit);
+$prevPage = $page - 1;
+$nextPage = $page + 1;
+endd:
 ?>
 
 <!doctype html>
@@ -104,73 +119,14 @@ $numBlogs = $blogs->num_rows;
 </div>
 
 <div class="title-and-menu-area">
-    <div class="position-relative" style="top: 0;">
-        <div id="myCarousel" class="carousel slide" data-ride="carousel">
-            <div class="carousel-inner">
-                <?php $rand3 = DB::get3RandomPost();
-                for ($i = 0; $i < count($rand3); $i++) {
-                    $post = $rand3[$i]; ?>
-                    <div class="carousel-item <?php if ($i == 0) echo 'active' ?>">
-                        <img alt="title background" src="<?php echo Utils::topLevelImage($post['title_img_path']); ?>"
-                             class="title-area-img">
-                        <div class="row position-absolute justify-content-center"
-                             style="top: 0; width: 100%; bottom: 0;">
-                            <div class="col-md-8 d-flex flex-column align-items-center position-absolute justify-content-end"
-                                 style="bottom: 0; top: 0;">
-                                <span class="text-white-50 text-uppercase text-center mt-3">
-                                    <?php $catgr = DB::getCategoryById($post['category_id']);
-                                    echo (empty($catgr)?"Uncategorized":$catgr);?>
-                                </span>
-                                <div class="row">
-                                    <span class="main-title text-white text-uppercase text-center col-10 col-md-9 mx-auto">
-                                        <?php echo $post['title_text'] ?>
-                                    </span>
-                                </div>
-                                <a href="single-post.php?id=<?php echo $post['id'] ?>"
-                                   class="btn btn-primary text-uppercase text-white px-md-4 py-md-2 rounded-pill px-sm-2 py-sm-1 small-font">Read
-                                    More</a>
-                                <img src="<?php echo DB::getUserProfilePicPath($post['author_id']); ?>"
-                                     alt="author avatar"
-                                     style="margin-top: 3vw; width: 50px; height: auto"/>
-                                <span class="text-white small-font font-weight-bold">
-                                    <?php echo DB::getUserById($post['author_id'])->name ?>
-                                </span>
-                                <div class="extra-small-font"><span class="text-white-50 mr-3">
-                                        <?php echo date("F j, Y", Utils::getTime($post['created_at'])); ?>
-                                        </span>
-                                    <span
-                                            class="text-white text-white-50"><?php echo date("H:i", Utils::getTime($post['created_at'])); ?></span>
-                                </div>
-                                <div style="margin-top: 2vw; margin-bottom: 2vw;">
-                                    <a href="single-post.php?id=<?php echo $post['id']; ?>#comment-section"
-                                       class="text-white-50 mr-3 extra-small-font"> <span
-                                                class="material-icons extra-small-font">forum</span> Comments
-                                        (<?php echo count(DB::getComments($post['id'])); ?>)</a>
-                                    <a class="text-white-50 extra-small-font"> <span
-                                                class="material-icons extra-small-font">favorite_border</span>
-                                        Likes (<?php echo DB::getLikeCount($post['id']) ?>)</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php } ?>
-            </div>
+    <div class="position-relative bg-dark" style="top: 0;">
 
-            <a class="carousel-control-prev" href="#myCarousel" role="button" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="sr-only">Previous</span>
-            </a>
-            <a class="carousel-control-next" href="#myCarousel" role="button" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="sr-only">Next</span>
-            </a>
-        </div><!--title area-->
+        <div class="main-content-area position-relative" style="top: 0; left: 0; right: 0;">
 
-        <div class="main-content-area position-absolute" style="top: 0; left: 0; right: 0;">
-
-            <nav class="navbar navbar-expand-xl bg-transparent navbar-dark text-uppercase" style="z-index: 1000000;">
+            <nav class="navbar navbar-expand-xl navbar-dark text-uppercase" style="z-index: 1000000;">
                 <div class="navbar-brand mr-auto">
-                    <a href="#" class="nav-link text-uppercase brand-font text-white font-weight-bolder">My Blog</a>
+                    <a href="index.php" class="nav-link text-uppercase brand-font text-white font-weight-bolder">My
+                        Blog</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navContent">
                     <span class="navbar-toggler-icon"></span>
@@ -183,8 +139,8 @@ $numBlogs = $blogs->num_rows;
                         </a>
 
                         <?php $categories = DB::conn()->query("SELECT * FROM categories;");
-                        $limit = 0;
-                        while ($limit < 5 && $cat = $categories->fetch_assoc()) { ?>
+                        $indx = 0;
+                        while ($indx < 5 && $cat = $categories->fetch_assoc()) { ?>
                             <a href="category.php?cat_id=<?php echo $cat['id'] ?>"
                                class="ml-1 nav-link text-white text-right
                            <?php if (isset($_GET['cat_id']) && $_GET['cat_id'] == $cat['id']) echo 'active'; ?>"
@@ -192,7 +148,7 @@ $numBlogs = $blogs->num_rows;
                                 <?php echo $cat['category_name']; ?>
                             </a>
                             <?php
-                            $limit++;
+                            $indx++;
                         }
                         if (isLoggedIn()) { ?>
                             <a href="admin/index.php" class="ml-1 nav-link text-white text-right material-icons"
@@ -206,123 +162,15 @@ $numBlogs = $blogs->num_rows;
         </div><!--Main Menu-->
     </div>
 </div><!--Main Menu and Title-->
-<?php
-if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
-    if ($_SESSION['msg'] == 'no_id') {
-        ?>
-        <div class="alert alert-danger alert-dismissible fade show text-center col-md-6 mx-auto m-4" role="alert">
-            No Blog Post Found To be Displayed.
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <?php
-        unset($_SESSION['msg']);
-        $_SESSION['msg'] = '';
-    }
-}
-?>
+
 <div class="mt-3 position-relative">
     <div class="bg-white d-none d-md-block position-absolute" style="width: 11%; right: 0; top: 0; bottom: 0;"></div>
     <!--right white area-->
     <div class="main-content-area row">
         <div class="col-md-8"><!--left column-->
             <div class="articles mr-md-1 ml-md-n3">
-                <?php $cblg = $blogs->fetch_assoc();
-                if ($cblg != null) {
-                    ?>
-                    <div class="card mb-4 bg-white">
-                        <div class="position-relative"><!--image and the content overlaying on the image-->
-                            <img src="<?php echo Utils::topLevelImage($cblg['title_img_path']) ?>" alt="alt"
-                                 class="card-img-top card-img">
-                            <!--<a href="#"><span class="text-white place-center material-icons"
-                                              style="font-size: 48px">play_circle_outline</span></a>-->
-                            <div class="row position-absolute align-items-baseline on-image-text">
-                            <span class="text-uppercase mr-auto text-white col-md-6">
-                                <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
-                            </span>
-                                <div class="col-md-6 d-flex justify-content-end">
-                                    <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section">
-                                        <span class="material-icons extra-small-font text-white ">forum</span>
-                                        <span class="mr-4 text-white extra-small-font">&nbsp
-                                    <?php echo count(DB::getComments($cblg['id']));
-                                    $cbid = $cblg['id']; ?></span>
-                                    </a>
-                                    <a>
-                                    <span id="like_icon_overlay_<?php echo $cbid ?>"
-                                          class="material-icons extra-small-font text-white">
-                                        <?php
-                                        echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
-                                            ? 'favorite' : 'favorite_border';
-                                        ?>
-                                    </span>
-                                        <span class="text-white extra-small-font"
-                                              id="like_count_<?php echo $cbid; ?>">&nbsp; <?php echo(DB::getLikeCount($cblg['id'])); ?></span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body border-bottom mb-2">
-                            <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
-                                        class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span></a>
-                            <span class="open-sans-font two-line-text"><?php echo $cblg['blog_text'] ?></span>
-                        </div>
-                        <?php $author = DB::getUserById($cblg['author_id']) ?>
-                        <div class="media px-3 pb-2">
-                            <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"
-                                 class="mr-3 rounded-circle" alt="alt"
-                                 style="max-width: 60px">
-                            <div class="media-body">
-                                <span class="mt-0 small-font"><?php echo Utils::titleCase($author->name) ?></span>
-                                <br>
-                                <span class="extra-small-font text-muted">
-                                <?php echo date("F j, Y", Utils::getTime($cblg['created_at'])); ?>&nbsp;&nbsp;<?php echo date("H:i", Utils::getTime($cblg['created_at'])); ?>
-                            </span>
-                            </div>
-                            <div class="dropdown my-auto">
-                                <a class="dropdown-toggle nav-link text-dark text-right mx-0 px-0" type="button"
-                                   id="article1-option"
-                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="material-icons">more_vert</i></a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="article1-option">
-                                    <?php if (isLoggedIn()) { ?>
-                                        <a id="like_icon_dropdown_<?php echo $cbid; ?>"
-                                           class="dropdown-item material-icons"
-                                           href="#">
-                                            <?php
-                                            echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
-                                                ? 'favorite' : 'favorite_border';
-                                            ?>
-                                        </a>
-                                        <a class="dropdown-item material-icons" href="#">comment</a>
-                                        <a class="dropdown-item material-icons" href="#">share</a>
-                                    <?php } else { ?>
-                                        <a class="dropdown-item" href="login.php?next=index.php">Please Login</a>
-                                    <?php } ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php } else {
-                    ?>
-                    <div class="h1 mb-4 bg-white text-warning text-center" style="height: 400px; padding: 100px;">
-                        "No Posts"
-                    </div>
-                <?php } ?>
-                <?php
-                $page = 1;
-                if (isset($_GET['page']) && !empty($_GET['page']))
-                    $page = max(1, (int)$_GET['page']);
-                if ($cblg != null)
-                    $cblg = $blogs->fetch_assoc();
-                for ($pp = 1; $pp <= $page && $cblg; $pp++) {
-                    ?>
-                    <!--horizontal two-->
-                    <?php
-                    if ($page != 1 && $pp == $page) {
-                        echo "<a id='more_posts'></a>";
-                    }
-                    for ($hor = 0; $hor < 2 && $cblg != null; $hor++, $cblg = $blogs->fetch_assoc()) {
+                <?php if (empty($msg)) {
+                    while ($cblg = $blogs->fetch_assoc()) {
                         $author = DB::getUserById($cblg['author_id']); ?>
                         <div class="card mb-4 bg-white d-flex flex-md-row rounded flex-wrap">
                             <div class="card-img-top col-12 col-md-6 col-lg-5 no-gutters p-0">
@@ -335,7 +183,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                                        style="font-size: 48px">play_circle_outline</span></a>-->
                                     <div class="row position-absolute align-items-baseline on-image-text">
                                         <span class="text-uppercase mr-auto text-white">
-                                            <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
+                                            <?php echo(empty($cblg['category_name']) ? "Uncategorized" : $cblg['category_name']); ?>
                                         </span>
                                         <div class="d-flex justify-content-end">
                                             <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section">
@@ -363,7 +211,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                             <div class="col-12 col-md-6 col-lg-7">
                                 <div class="border-bottom py-2">
                                     <a href='single-post.php<?php echo "?id=$cbid" ?>'><span
-                                                class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span>
+                                            class="text-dark big-font font-weight-bold one-line-text"><?php echo($cblg['title_text']); ?></span>
                                     </a>
                                     <span class="two-line-text open-sans-font small-font"><?php echo $cblg['blog_text'] ?></span>
                                 </div>
@@ -406,129 +254,76 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                             </div>
                         </div>
                         <?php
-                    } ?>
+                    }
+                } else { ?>
+                    <div class="alert alert-info alert-dismissible fade show mx-auto col-md-9" role="alert">
+                        <strong><?php echo $msg ?></strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                <?php } ?>
 
-                    <?php
-                    if ($cblg != null) {
-                        ?>
-                        <!--vertical two-->
-                        <div class="row">
-                            <?php for ($ver = 0; $ver < 2 && $cblg != null; $ver++, $cblg = $blogs->fetch_assoc()) {
-                                $author = DB::getUserById($cblg['author_id']);
-                                $cbid = $cblg['id']; ?>
-                                <div class="col-md-6 mb-3">
-                                    <div class="card mb-2 bg-white">
-                                        <div class="position-relative">
-                                            <!--image and the content overlaying on the image-->
-                                            <img src="<?php echo Utils::topLevelImage($cblg['title_img_path']) ?>"
-                                                 alt="alt"
-                                                 class="card-img-top card-img fixed-height-img-2">
-                                            <div class="row position-absolute align-items-baseline on-image-text">
-                                                <span class="text-uppercase mr-auto text-white col-md-6">
-                                                    <?php echo (empty($cblg['category_name'])?"Uncategorized":$cblg['category_name']); ?>
-                                                </span>
-                                                <div class="col-md-6 d-flex justify-content-end align-items-end">
-                                                    <a href="single-post.php?id=<?php echo $cblg['id']; ?>#comment-section"
-                                                       class="px-0 text-nowrap">
-                                                        <span class="material-icons extra-small-font text-white ">forum</span>
-                                                        <span class="mr-4 text-white extra-small-font">&nbsp; <?php echo count(DB::getComments($cbid)) ?></span>
-                                                    </a>
-                                                    <a class="px-0 text-nowrap">
-                                                        <span id="like_icon_overlay_<?php echo $cbid ?>"
-                                                              class="material-icons extra-small-font text-white">
-                                                    <?php
-                                                    echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
-                                                        ? 'favorite' : 'favorite_border';
-                                                    ?>
-                                                </span>
-                                                        <span class="text-white extra-small-font"
-                                                              id="like_count_<?php echo $cbid; ?>">&nbsp; <?php echo(DB::getLikeCount($cblg['id'])); ?></span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="card-body border-bottom mb-2">
-                                            <a href='single-post.php<?php echo "?id=$cbid" ?>'> <span
-                                                        class="text-dark big-font font-weight-bold one-line-text"><?php echo $cblg['title_text'] ?></span></a>
-                                            <span class="four-line-text"><?php echo $cblg['blog_text']; ?></span>
-                                        </div>
-                                        <div class="media px-3 pb-2">
-                                            <img src="<?php echo Utils::topLevelImage($author->profile_pic_path) ?>"
-                                                 class="mr-3 rounded-circle" alt="alt"
-                                                 style="max-width: 60px">
-                                            <div class="media-body">
-                                                <span class="mt-0 small-font"><?php echo Utils::titleCase($author->name) ?></span>
-                                                <br>
-                                                <span class="extra-small-font text-muted">
-                                <?php echo date("F j, Y", Utils::getTime($cblg['created_at'])); ?>&nbsp;&nbsp;<?php echo date("H:i", Utils::getTime($cblg['created_at'])); ?>
-                            </span>
-                                            </div>
-                                            <div class="dropdown my-auto">
-                                                <a class="dropdown-toggle nav-link text-dark text-right mx-0 px-0"
-                                                   type="button"
-                                                   id="article1-option"
-                                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    <i class="material-icons">more_vert</i></a>
-                                                <div class="dropdown-menu dropdown-menu-right"
-                                                     aria-labelledby="article1-option">
-                                                    <?php if (isLoggedIn()) { ?>
-                                                        <a id="like_icon_dropdown_<?php echo $cbid; ?>"
-                                                           class="dropdown-item material-icons"
-                                                           href="#">
-                                                            <?php
-                                                            echo (isLoggedIn() && DB::conn()->query("SELECT * FROM likes WHERE user_id=$user->id AND blog_id=$cbid")->num_rows > 0)
-                                                                ? 'favorite' : 'favorite_border';
-                                                            ?>
-                                                        </a>
-                                                        <a class="dropdown-item material-icons" href="#">comment</a>
-                                                        <a class="dropdown-item material-icons" href="#">share</a>
-                                                    <?php } else { ?>
-                                                        <a class="dropdown-item" href="login.php?next=index.php">Please
-                                                            Login</a>
-                                                    <?php } ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                <?php if (empty($msg)) { ?>
+                    <div class="mx-auto d-flex justify-content-center">
+                        <nav aria-label="pagination" class="d-inline-block">
+                            <ul class="pagination">
+                                <?php if ($page == 1) { ?>
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                                    </li>
+                                <?php } else { ?>
+                                    <li class="page-item">
+                                        <?php echo "<a class='page-link' href='tagged.php?tag_id=$tagId&page=$prevPage&limit=$limit'>Previous</a>" ?>
+                                    </li>
+                                <?php }
+                                $pageIndex = max(1, $page - $expand);
+                                while ($pageIndex < $page) {
+                                    ?>
+                                    <li class="page-item">
+                                        <?php echo "<a class='page-link' href='tagged.php?tag_id=$tagId&page=$pageIndex&limit=$limit'>$pageIndex</a>" ?>
+                                    </li>
+                                    <?php
+                                    $pageIndex++;
+                                }
+                                ?>
+                                <li class="page-item active">
+                                    <?php echo "<a class='page-link' href='tagged.php?tag_id=$tagId&page=$page&limit=$limit'>$page <span class='sr-only'>(current)</span></a>" ?>
+                                </li>
                                 <?php
-                            } ?>
+                                $pageIndex = $page + 1;
+                                while ($pageIndex <= ($page + $expand) && $pageIndex <= $totalPages) {
+                                    ?>
+                                    <li class="page-item">
+                                        <?php echo "<a class='page-link' href='tagged.php?tag_id=$tagId&page=$pageIndex&limit=$limit'>$pageIndex</a>" ?>
+                                    </li>
+                                    <?php
+                                    $pageIndex++;
+                                }
+                                if ($page == $totalPages) { ?>
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1">Next</a>
+                                    </li>
+                                <?php } else { ?>
+                                    <li class="page-item">
+                                        <?php echo "<a class='page-link' href='tagged.php?tag_id=$tagId&page=$nextPage&limit=$limit'>Next</a>" ?>
+                                    </li>
+                                <?php } ?>
+                            </ul>
+                        </nav>
+                    </div>
+                    <div class="dropdown d-flex justify-content-center mb-3">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Choose Posts Per Page
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <?php for ($items = 1; $items <= 5; $items++)
+                                echo "<a class='dropdown-item' href='tagged.php?tag_id=$tagId&limit=$items'>$items Per Page</a>";
+                            ?>
                         </div>
-                        <?php
-                    }
-                }
-                ?>
-
-                <?php
-                $prevQuery = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-                if ($prevQuery == null) $prevQuery = "";
-                $pos = strpos($prevQuery, "page=");
-                if ($pos === 0 || !empty($pos)) {
-                    $newQuer = substr($prevQuery, 0, $pos);
-                    $pos += 5;
-                    while ($pos < strlen($prevQuery) && (is_numeric($prevQuery[$pos]) || $prevQuery[$pos] == '&')) {
-                        $pos++;
-                    }
-                    if ($pos < strlen($prevQuery))
-                        $newQuer .= substr($prevQuery, $pos);
-                    $prevQuery = $newQuer;
-                }
-
-                if (strlen($prevQuery) != 0 && $prevQuery[strlen($prevQuery) - 1] != '&') {
-                    $prevQuery .= "&";
-                }
-                $page++;
-                $prevQuery .= "page=$page";
-                ?>
-                <div class="my-4 text-right">
-                    <?php if ($cblg != null) { ?>
-                        <a href="index.php?<?php echo $prevQuery . "#more_posts" ?>"
-                           class="text-primary text-decoration-none row justify-content-end align-items-center mr-3">
-                            <span class="mr-2">More</span>
-                            <span class="material-icons text-primary rounded-circle bg-white shadow p-1">arrow_forward</span>
-                        </a>
-                    <?php } ?>
-                </div>
+                    </div>
+                <?php } ?>
             </div>
         </div><!--articles area-->
 
@@ -601,7 +396,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                     </li>
                     <li class="px-0 pb-0 list-group-item border-0 open-sans-font">
                         <p style="border-bottom: 1px solid black; line-height: .1em; text-align: center"><span
-                                    style="background-color: white;" class="px-1">or</span></p>
+                                style="background-color: white;" class="px-1">or</span></p>
                     </li>
                     <li class="px-3 pt-0 pb-1 list-group-item border-0">
                         <div class="row justify-content-around">
@@ -659,14 +454,14 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                         </div>
                                         <div class="col-8 flex-column">
                                             <div class="px-3 row"><span
-                                                        class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
+                                                    class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
                                                 <a href="single-post.php?id=<?php echo $res['id']; ?>#comment-section"
                                                    class="material-icons extra-small-font">forum</a>
                                                 <span class="extra-small-font"> &nbsp <?php echo count(DB::getComments($res['id'])) ?></span>
                                             </div>
                                             <div class="p-0 font-weight-bold small-font two-line-text"><a
-                                                        href="single-post.php?id=<?php echo $res['id'] ?>"
-                                                        class="text-dark">
+                                                    href="single-post.php?id=<?php echo $res['id'] ?>"
+                                                    class="text-dark">
                                                     <?php echo $res['title_text']; ?>
                                                 </a></div>
                                         </div>
@@ -690,14 +485,14 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                                         </div>
                                         <div class="col-8 flex-column">
                                             <div class="px-3 row"><span
-                                                        class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
+                                                    class="mr-auto text-muted extra-small-font"><?php echo date("F j, Y", Utils::getTime($res['created_at'])); ?></span>
                                                 <a href="single-post.php?id=<?php echo $res['id']; ?>#comment-section"
                                                    class="material-icons extra-small-font">forum</a>
                                                 <span class="extra-small-font"> &nbsp <?php echo count(DB::getComments($res['id'])) ?></span>
                                             </div>
                                             <div class="p-0 font-weight-bold small-font two-line-text"><a
-                                                        href="single-post.php?id=<?php echo $res['id'] ?>"
-                                                        class="text-dark">
+                                                    href="single-post.php?id=<?php echo $res['id'] ?>"
+                                                    class="text-dark">
                                                     <?php echo $res['title_text']; ?>
                                                 </a></div>
                                         </div>
@@ -904,7 +699,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                         <div class="text-light">
                             2 hours ago <i class="fa fa-long-arrow-right"></i> <a href="#"
                                                                                   class="text-light"><u>Reply</u> </a><a
-                                    href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
+                                href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
                             </a>
                         </div>
                     </div>
@@ -920,7 +715,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                         <div class="text-light">
                             2 hours ago <i class="fa fa-long-arrow-right"></i> <a href="#"
                                                                                   class="text-light"><u>Reply</u> </a><a
-                                    href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
+                                href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
                             </a>
                         </div>
                     </div>
@@ -936,7 +731,7 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                         <div class="text-light">
                             2 hours ago <i class="fa fa-long-arrow-right"></i> <a href="#"
                                                                                   class="text-light"><u>Reply</u> </a><a
-                                    href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
+                                href="#" class="text-light"><u>Retweet</u> </a><a href="#" class="text-light"><u>Favorite</u>
                             </a>
                         </div>
                     </div>
@@ -1063,6 +858,11 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
         }
         ?>
 
+        $('.reply-btn').click(function (event) {
+            var commenter = event.target.parentElement.firstElementChild.textContent;
+            document.getElementById('comment-box').value = "@" + commenter + " ";
+            document.getElementById('comment-box').focus();
+        });
         //post tab functionality
         let recentTab = $('#recent-post-tab');
         let popularTab = $('#popular-post-tab');

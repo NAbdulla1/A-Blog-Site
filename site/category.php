@@ -314,7 +314,7 @@ endd:
                             </ul>
                         </nav>
                     </div>
-                    <div class="dropdown d-flex justify-content-center">
+                    <div class="dropdown d-flex justify-content-center mb-3">
                         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Choose Posts Per Page
@@ -518,7 +518,7 @@ endd:
                             while ($tag = $tags->fetch_assoc()) {
                                 ?>
                                 <a class="btn-sm text-dark mr-2 my-1 font-weight-bold" style="background-color: #f5f5f5"
-                                   href="#"><?php echo $tag['tag_name'] ?></a>
+                                   href="tagged.php?tag_id=<?php echo $tag['id']?>"><?php echo $tag['tag_name'] ?></a>
                                 <?php
                             }
                             ?>
