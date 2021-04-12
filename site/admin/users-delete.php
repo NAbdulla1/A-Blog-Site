@@ -21,7 +21,8 @@ $duserId = null;
 if (isset($_GET['id'])) {
     $duserId = $_GET['id'];
     $delUser = DB::getUserById($duserId);
-    unlink($delUser->profile_pic_path);
+    if (pathinfo($delUser->profile_pic_path, PATHINFO_FILENAME) != 'dummy_pic')
+        unlink($delUser->profile_pic_path);
     $duser = DB::conn()->query("DELETE FROM users where id = $duserId;");
     if ($duser) {
         header("Location: users.php?delete=1");
