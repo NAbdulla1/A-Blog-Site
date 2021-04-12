@@ -534,9 +534,9 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
 
         <div class="right-side-bar col-md-4 bg-white rounded">
             <div>
-                <form class="form-inline m-3 position-relative">
+                <form class="form-inline m-3 position-relative" method="get" action="search.php">
                     <label class="sr-only" for="search-box-top-right"></label>
-                    <input id="search-box-top-right" type="text" class="form-control rounded-pill w-100"
+                    <input name="search" id="search-box-top-right" type="text" class="form-control rounded-pill w-100"
                            style="background-color: #f5f5f5" placeholder="Search">
                     <button class=" border-0 bg-transparent">
                     <span class="place-right rounded-circle material-icons text-light p-1"
@@ -1015,8 +1015,8 @@ if (isset($_SESSION['msg']) && !empty($_SESSION['msg'])) {
                 <a class="text-uppercase text-light mr-3" href="#">Components</a>
                 <a class="text-uppercase text-light mr-auto" href="#">Features</a>
             </div>
-            <form class="form-inline mr-3 position-relative bg-transparent">
-                <input type="text" class="form-control rounded-pill w-100 border-secondary bg-transparent"
+            <form class="form-inline mr-3 position-relative bg-transparent" method="get" action="search.php">
+                <input name="search" type="text" class="form-control rounded-pill w-100 border-secondary bg-transparent text-white"
                        style="background-color: #f5f5f5"
                        placeholder="Search">
                 <button class="rounded-pill border-0 place-right bg-transparent material-icons text-secondary">
