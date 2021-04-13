@@ -46,9 +46,6 @@ $imageSavePath = $conn->query("SELECT title_img_path FROM blogs WHERE id = $blog
 
 //delete images
 unlink($imageSavePath);
-$res = $conn->query("SELECT * FROM blog_images WHERE blog_id = $blogID;");
-while (($rr = $res->fetch_assoc()))
-    if (unlink($rr['path'])) $conn->query("DELETE FROM blog_images WHERE blog_id = $blogID");
 
 if ($conn->query("DELETE FROM blogs WHERE id = $selectedBlogID")) {
     $_SESSION['msgg'] = 'success';
