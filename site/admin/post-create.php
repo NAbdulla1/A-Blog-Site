@@ -212,31 +212,13 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
                 <div class="form-group">
                     <label for="tag_sel">Select Tags</label>
                     <select class="custom-select my-1 mx-0" id="tag_sel" name="check_list[]" multiple="multiple"
-                            required>
-                        <?php
-                        $result = DB::conn()->query("SELECT * FROM tags;");
-                        while (($row = $result->fetch_assoc())) {
-                            $tag_id = $row['id'];
-                            $tag = $row['tag_name'];
-                            echo "<option value='$tag_id'>$tag</option>";
-                            /*echo "<div class='form-check form-check-inline my-1'>
-                                <input name='check_list[]' class='form-check-input' type='checkbox' id='inlineCheckbox$tag_id' value='$tag_id'>
-                                <label class='form-check-label  mr-3' for='inlineCheckbox$tag_id'>$tag</label>
-                            </div>";*/
-                        }
-                        ?>
-                    </select>
+                            required></select>
                     <a id="addNewTags" target="_blank"
                        class="btn btn-sm btn-outline-secondary py-0 my-1 d-inline-flex align-items-center"
                        href="tags.php">
                         <span class="material-icons">add</span>
                         Add More Tags
                     </a>
-                    <button id="loadNewTags" type="button"
-                            class="ml-1 invisible btn btn-sm btn-outline-info py-0 d-inline-flex align-items-center">
-                        <span class="material-icons">sync</span>
-                        Load New Tags
-                    </button>
                 </div>
                 <div class="form-group mt-3">
                     <label for="title-img">Cover Image</label>
@@ -262,31 +244,13 @@ $_SESSION['cause'] = "Incomplete Form Submitted";
     $(document).ready(function () {
         new nicEditor({fullPanel: true}).panelInstance('blogText');
 
-        //select2
-        $('#tag_sel').select2();
-
-        //load tags dynamically
-        $('#addNewTags').click(function () {
-            $('#loadNewTags').removeClass('invisible');
-        });
-
-        var url = "<?php echo Utils::getBaseUrl();?>/admin/tags-json.php";
-        $('#loadNewTags').click(function () {
-            jQuery.get(url, function (tags, status) {
-                if (status === 'success') {
-                    let tagSelect = $('#tag_sel');
-                    tagSelect.children('*').remove();//remove all children
-
-                    for (const tag of tags) {//add new tags
-                        let option = document.createElement("option");
-                        option.value = tag.id;
-                        option.append(tag['tag_name']);
-
-                        tagSelect.prepend(option);
-                    }
-                    $('#loadNewTags').addClass('invisible');
-                }
-            });
+        //select2 with dynamic tag load
+        $('#tag_sel').select2({
+            ajax: {
+                type: 'GET',
+                url: '<?php echo Utils::getBaseUrl() . "/admin/tags-json.php"?>',
+                dataType: 'json'
+            }
         });
     });
 </script>
